@@ -13,6 +13,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // استدعاء الـ Seeders التي تحتاج إلى تنفيذها
+        $this->call([
+            ProjectSeeder::class,
+            SkillSeeder::class,
+            ContactSeeder::class, // إضافة ContactSeeder هنا
+        ]);
+        
         // User::factory(10)->create();
 
         User::factory()->create([
