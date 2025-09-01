@@ -15,16 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         // استدعاء الـ Seeders التي تحتاج إلى تنفيذها
         $this->call([
+            AdminUserSeeder::class,
             ProjectSeeder::class,
             SkillSeeder::class,
             ContactSeeder::class, // إضافة ContactSeeder هنا
-        ]);
-        
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
         ]);
     }
 }
