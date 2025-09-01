@@ -2,112 +2,218 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreContactRequest;
+use App\Http\Resources\ContactResource;
 use App\Models\Contact;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
     // GET all contacts (for admin use)
     public function index(Request $request): JsonResponse
     {
-        $query = Contact::query();
-        
-        // Filter by read status
-        if ($request->has('read')) {
-            $query->whereNotNull('read_at', $request->boolean('read'));
+        try{
+            $this->authorize('viewAny', Contact::class);
+            $query = Contact::query();
+            
+            // Filter by read status
+            if ($request->has('read')) {
+                if ($request->boolean('read')) {
+                    $query->whereNotNull('read_at');
+                } else {
+                    $query->whereNull('read_at');
+                }
+            }
+
+            // Filter by date range
+            if ($request->has('start_date')) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            
+            if ($request->has('end_date')) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+            
+            // Sort by latest
+            $query->orderBy('created_at', 'desc');
+
+            // Paginate results
+            $perPage = $request->get('per_page', 15);
+            $contacts = $query->paginate($perPage);
+            
+            return response()->json([
+                'data' => ContactResource::collection($contacts),
+                'meta' => [
+                    'current_page' => $contacts->currentPage(),
+                    'total_pages' => $contacts->lastPage(),
+                    'total_items' => $contacts->total(),
+                    'per_page' => $contacts->perPage(),
+                ]
+            ]);
+        } catch (\Exception $e){
+            Log::error('Contact index error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to fetch contacts',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500); 
         }
-        
-        // Sort by latest
-        $query->orderBy('created_at', 'desc');
-        
-        $contacts = $query->get();
-        
-        return response()->json($contacts);
     }
 
     // POST create contact
-    public function store(Request $request): JsonResponse
+    public function store(StoreContactRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'subject' => 'nullable|string|max:255',
-            'message' => 'required|string|min:10',
-        ]);
+        try {
+            $validated = $request->validated();
+            
+            // Add IP address
+            $validated['ip_address'] = $request->ip();
+            
+            // Add any additional form data
+            $validated['form_data'] = json_encode($request->except(['name', 'email', 'subject', 'message']));
 
-        if ($validator->fails()) {
+            $contact = Contact::create($validated);
+            
+            Log::info('Contact message created', ['contact_id' => $contact->id]);
+            
+            // Here you can add code to send email notification
+            // $this->sendNotification($contact);
+            
             return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Your message has been sent successfully, we will contact you soon',
+                'data' => new ContactResource($contact)
+            ], 201);
+            
+        } catch (\Exception $e) {
+            Log::error('Contact store error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to send message',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-
-        $data = $validator->validated();
-        
-        // Add IP address
-        $data['ip_address'] = $request->ip();
-        
-        // Add any additional form data
-        $data['form_data'] = json_encode($request->except(['name', 'email', 'subject', 'message']));
-
-        $contact = Contact::create($data);
-
-        // Here you can add code to send email notification
-        
-        return response()->json([
-            'message' => 'Contact message sent successfully',
-            'data' => $contact
-        ], 201);
     }
 
     // Mark contact as read
     public function markAsRead($id): JsonResponse
     {
-        $contact = Contact::findOrFail($id);
-        
-        if (!$contact->read_at) {
-            $contact->read_at = now();
-            $contact->save();
+        try {
+            $this->authorize('update', Contact::class);
+            
+            $contact = Contact::findOrFail($id);
+            
+            if (!$contact->read_at) {
+                $contact->read_at = now();
+                $contact->save();
+                
+                Log::info('Contact marked as read', ['contact_id' => $contact->id]);
+            }
+            
+            return response()->json([
+                'message' => 'The message has been marked as read.',
+                'data' => new ContactResource($contact)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Contact mark as read error', ['error' => $e->getMessage(), 'contact_id' => $id]);
+            return response()->json([
+                'message' => 'Failed to mark contact as read',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-        
-        return response()->json(['message' => 'Contact marked as read']);
     }
 
     // GET single contact
     public function show($id): JsonResponse
     {
-        $contact = Contact::findOrFail($id);
-        
-        // Mark as read when viewed
-        if (!$contact->read_at) {
-            $contact->read_at = now();
-            $contact->save();
+        try {
+            $this->authorize('view', Contact::class);
+            
+            $contact = Contact::findOrFail($id);
+            
+            // Mark as read when viewed
+            if (!$contact->read_at) {
+                $contact->read_at = now();
+                $contact->save();
+                
+                Log::info('Contact marked as read on view', ['contact_id' => $contact->id]);
+            }
+            
+            return response()->json([
+                'data' => new ContactResource($contact)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Contact show error', ['error' => $e->getMessage(), 'contact_id' => $id]);
+            return response()->json([
+                'message' => 'Contact not found',
+                'error' => config('app.debug') ? $e->getMessage() : 'Not found'
+            ], 404);
         }
-        
-        return response()->json($contact);
     }
 
     // DELETE contact
     public function destroy($id): JsonResponse
     {
-        $contact = Contact::findOrFail($id);
-        $contact->delete();
-
-        return response()->json(['message' => 'Contact deleted successfully']);
+        try {
+            $this->authorize('delete', Contact::class);
+            
+            $contact = Contact::findOrFail($id);
+            $contact->delete();
+            
+            Log::info('Contact deleted', ['contact_id' => $id]);
+            
+            return response()->json([
+                'message' => 'تم حذف الرسالة بنجاح'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Contact destroy error', ['error' => $e->getMessage(), 'contact_id' => $id]);
+            return response()->json([
+                'message' => 'Failed to delete contact',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
     
     // GET contact statistics
     public function stats(): JsonResponse
     {
-        $total = Contact::count();
-        $unread = Contact::whereNull('read_at')->count();
-        $read = $total - $unread;
-        
-        return response()->json([
-            'total' => $total,
-            'read' => $read,
-            'unread' => $unread
-        ]);
+        try {
+            $this->authorize('viewAny', Contact::class);
+            
+            $total = Contact::count();
+            $unread = Contact::whereNull('read_at')->count();
+            $read = $total - $unread;
+            
+            // Get stats by date (last 30 days)
+            $recentStats = Contact::where('created_at', '>=', now()->subDays(30))
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+            
+            return response()->json([
+                'total' => $total,
+                'read' => $read,
+                'unread' => $unread,
+                'recent_stats' => $recentStats
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Contact stats error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to fetch contact statistics',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    // Optional: Method to send notification email
+    protected function sendNotification(Contact $contact): void
+    {
+        // Implement your email notification logic here
+        // Example:
+        // Mail::to(config('mail.admin_address'))->send(new ContactNotification($contact));
     }
 }

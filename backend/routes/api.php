@@ -25,12 +25,10 @@ Route::post('/contact', [ContactController::class, 'store']);
 // Routes with authentication
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/profile', [AuthController::class, 'profile']);
 
-    // Admin only routes
-    Route::middleware(['role:admin'])->group(function () {
+    // Admin only routes - Using Policies for authorization instead of role middleware
+    Route::middleware(['can:admin'])->group(function () {
         // Projects admin routes
         Route::post('/projects', [ProjectController::class, 'store']);
         Route::put('/projects/{id}', [ProjectController::class, 'update']);
