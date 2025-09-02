@@ -15,42 +15,76 @@ class SkillController extends Controller
     // GET all skills
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $query = Skill::query();
             
-            // Filter by category if provided
-            if ($request->has('category')) {
-                $query->where('category', $request->category);
+            // Filter by minimum level
+            $query->when($request->has('min_level'), function ($q) use ($request) {
+                return $q->where('level', '>=', $request->integer('min_level'));
+            });
+            
+            // Filter by maximum level
+            $query->when($request->has('max_level'), function ($q) use ($request) {
+                return $q->where('level', '<=', $request->integer('max_level'));
+            });
+            
+            // Validate level range if both are provided
+            if ($request->has('min_level') && $request->has('max_level')) {
+                $minLevel = $request->integer('min_level');
+                $maxLevel = $request->integer('max_level');
+                
+                if ($minLevel > $maxLevel) {
+                    return response()->json([
+                        'message' => 'Minimum level cannot be greater than maximum level'
+                    ], 422);
+                }
             }
+
+            // Filter by category
+            $query->when($request->has('category'), function ($q) use ($request) {
+                return $q->where('category', $request->category);
+            });
             
             // Filter by featured status
-            if ($request->has('featured')) {
-                $query->where('is_featured', $request->boolean('featured'));
-            }
+            $query->when($request->has('featured'), function ($q) use ($request) {
+                return $q->where('is_featured', $request->boolean('featured'));
+            });
             
-            // Sort results
+            // Apply sorting with validation
             $sortField = $request->get('sort_by', 'sort_order');
             $sortDirection = $request->get('sort_dir', 'asc');
-
+            
+            // Define allowed sort fields
+            $allowedSortFields = ['name', 'level', 'category', 'sort_order', 'created_at'];
+            $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'sort_order';
+            
+            // Validate sort direction
+            $sortDirection = in_array(strtolower($sortDirection), ['asc', 'desc']) ? $sortDirection : 'asc';
+            
             $query->orderBy($sortField, $sortDirection)->orderBy('name');
-            // Paginate results
-            $perPage = $request->get('per_page', 10);
+            
+            // Paginate with limits
+            $perPage = min($request->get('per_page', 10), 50); // Max 50 items per page
             $skills = $query->paginate($perPage);
             
             return response()->json([
                 'data' => SkillResource::collection($skills),
                 'meta' => [
                     'current_page' => $skills->currentPage(),
-                    'total_pages' => $skills->lastPage(),
-                    'total_items' => $skills->total(),
+                    'last_page' => $skills->lastPage(),
                     'per_page' => $skills->perPage(),
+                    'total' => $skills->total(),
                 ],
             ]);
-        } catch (\Exception $e){
-            Log::error('Skill index error', ['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            Log::error('Skill index error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
             return response()->json([
                 'message' => 'Failed to fetch skills',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

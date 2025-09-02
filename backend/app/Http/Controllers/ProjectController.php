@@ -17,48 +17,57 @@ class ProjectController extends Controller
     // GET all projects (with optional filters)
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $query = Project::query();
-        
-            // Filter by published status
-            if ($request->has('published')) {
-                $query->where('is_published', $request->boolean('published'));
-            }
             
-            // Filter by category if needed
-            if ($request->has('category')) {
-                // Assuming you have a category field or relation
-                // $query->where('category', $request->category);
-            }
-            // Search by title
-            if ($request->has('search')) {
-                $query->where('title', 'like', '%' . $request->search . '%');
-            }
+            // Apply filters
+            $query->when($request->has('published'), function ($q) use ($request) {
+                return $q->where('is_published', $request->boolean('published'));
+            });
             
-            // Sort results
-            $sortField = $request->get('sort_by', 'sort_order');
-            $sortDirection = $request->get('sort_dir', 'asc');
+            $query->when($request->has('category'), function ($q) use ($request) {
+                return $q->where('category', $request->category);
+            });
             
-            $query->orderBy($sortField, $sortDirection);
+            $query->when($request->has('search'), function ($q) use ($request) {
+                $search = $request->get('search');
+                return $q->where(function ($q2) use ($search) {
+                    $q2->where('title', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%");
+                });
+            });
             
-            // Paginate results
-            $perPage = $request->get('per_page', 10);
+            // Apply sorting (with input validation)
+            $sortField = $request->get('sort_by', 'created_at');
+            $sortDirection = $request->get('sort_dir', 'desc');
+            
+            // Prevent potential SQL injection through sort field
+            $allowedSortFields = ['title', 'created_at', 'updated_at', 'sort_order'];
+            $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'created_at';
+            
+            $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
+
+            // Pagination
+            $perPage = min($request->get('per_page', 10), 100); // Limit max per_page to 100
             $projects = $query->paginate($perPage);
-            
+
             return response()->json([
                 'data' => ProjectResource::collection($projects),
                 'meta' => [
                     'current_page' => $projects->currentPage(),
-                    'total_pages' => $projects->lastPage(),
-                    'total_items' => $projects->total(),
+                    'last_page' => $projects->lastPage(),
                     'per_page' => $projects->perPage(),
+                    'total' => $projects->total(),
                 ]
             ]);
         } catch (\Exception $e) {
-            Log::error('Project index error: ', ['error' => $e->getMessage()]);
+            Log::error('Project index error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
-                'message'=> 'Failed to retrieve projects',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal Server Error'
+                'message' => 'Failed to retrieve projects',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
         
