@@ -26,7 +26,7 @@ class StoreSkillRequest extends FormRequest
             'category' => 'required|string|max:255',
             'level' => 'nullable|integer|min:0|max:100',
             'color' => 'nullable|string|max:50',
-            'icon' => 'nullable|string|max:100',
+            'icon' => 'nullable|image|mimes:png,svg,jpg,jpeg|max:1024',
             'is_featured' => 'boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];

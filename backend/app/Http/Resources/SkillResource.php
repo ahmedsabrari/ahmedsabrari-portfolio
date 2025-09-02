@@ -20,7 +20,7 @@ class SkillResource extends JsonResource
             'category' => $this->category,
             'level' => $this->level,
             'color' => $this->color,
-            'icon' => $this->icon,
+            'icon' => $this->$this->icon ? asset('storage' . $this->icon) : null,
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
             'created_at' => $this->created_at->toISOString(),

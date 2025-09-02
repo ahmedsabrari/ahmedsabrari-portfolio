@@ -96,6 +96,13 @@ class SkillController extends Controller
             $this->authorize('create', Skill::class);
 
             $validated = $request->validated();
+
+            // Handle icon upload
+            if ($request->hasFile('icon')) {
+                $imagePath = $request->file('icon')->store('skills', 'public');
+                $validated['icon'] = $imagePath;
+            }
+
             $skill = Skill::create($validated);
 
             Log::info('Skill created successfully', ['skill_id' => $skill->id]);
