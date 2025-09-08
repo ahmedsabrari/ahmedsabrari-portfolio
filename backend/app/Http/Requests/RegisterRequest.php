@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules;
 
 class RegisterRequest extends FormRequest
 {
@@ -31,9 +32,12 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'Name is required',
+            'email.required' => 'Email is required',
+            'email.email' => 'Email must be a valid email address',
             'email.unique' => 'Email address already registered',
+            'password.required' => 'Password is required',
             'password.confirmed' => 'Password does not match',
-            'role.in' => 'Role must be either admin or visitor',
         ];
     }
 }
