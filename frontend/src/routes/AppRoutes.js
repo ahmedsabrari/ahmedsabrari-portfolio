@@ -8,17 +8,17 @@ import HomePage from "../pages/HomePage";
 import { fetchUser } from "../features/auth/authSlice";
 import { useAuth } from "../hooks/useAuth";
 import ProtectedRoute from "./ProtectedRoutes";
-import DashboardPage from "../pages/DashboardPge";
+import DashboardPage from "../pages/DashboardPage";
 
 const AppRouter = () => {
   const dispatch = useDispatch();
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (token) {
+    if (token && !isAuthenticated) {
       dispatch(fetchUser());
     }
-  }, [token, dispatch]);
+  }, [token, isAuthenticated, dispatch]);
 
   return (
     <Router>

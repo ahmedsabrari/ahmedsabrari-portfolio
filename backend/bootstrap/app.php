@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
-        $middleware->append(\Fruitcake\Cors\HandleCors::class);
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         
         $middleware->statefulApi([
             EnsureFrontendRequestsAreStateful::class,

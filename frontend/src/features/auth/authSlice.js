@@ -7,7 +7,10 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await api.post("/login", credentials);
-      return response.data;
+      return {
+        access_token: response.data.access_token,
+        user: response.data.user
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "حدث خطأ ما" }
@@ -22,8 +25,10 @@ export const register = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await api.post("/register", userData);
-      return response.data;
-      console.log(response.data);
+      return {
+        access_token: response.data.access_token,
+        user: response.data.user
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "حدث خطأ ما" }
@@ -77,6 +82,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.access_token;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
         localStorage.setItem("token", action.payload.access_token);
       })
@@ -93,6 +99,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.access_token;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
         localStorage.setItem("token", action.payload.access_token);
       })

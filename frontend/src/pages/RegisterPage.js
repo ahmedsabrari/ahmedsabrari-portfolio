@@ -14,6 +14,7 @@ const RegisterPage = () => {
     email: "",
     password: "",
     password_confirmation: "",
+    role: "visitor" // إضافة قيمة افتراضية
   });
 
   const [validationErrors, setValidationErrors] = useState({});
