@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "../features/auth/authSlice";
+import alertReducer from "../features/alert/alertSlice";
 
 // الحصول على token من localStorage
 const token = localStorage.getItem("token");
@@ -13,11 +14,15 @@ const preloadedState = {
     error: null,
     isAuthenticated: !!token, // إضافة isAuthenticated بناءً على وجود token
   },
+  alert:{
+    alerts: [],
+  },
 };
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    alert: alertReducer,
   },
   preloadedState,
   middleware: (getDefaultMiddleware) =>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { logout } from "../features/auth/authSlice";
+import { logoutUser } from "../features/auth/authSlice";
 import { useAuth } from "../hooks/useAuth";
+import { showAlert } from "../features/alert/alertSlice";
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
@@ -20,11 +21,27 @@ const DashboardPage = () => {
       tasks: 12,
       completed: 8
     });
-  }, []);
+    
+    // عرض رسالة ترحيب عند تحميل اللوحة
+    dispatch(showAlert(`مرحباً بعودتك، ${user?.name}!`, "success"));
+  }, [dispatch, user]);
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
   };
+
+  const handleCreateProject = () => {
+    // محاكاة إنشاء مشروع جديد
+    dispatch(showAlert("تم بدء إنشاء مشروع جديد", "info"));
+    
+    // في التطبيق الحقيقي، سيتم توجيه المستخدم إلى صفحة إنشاء المشروع
+    // navigate('/projects/create');
+  };
+
+  // const handleTaskAction = (action, taskName) => {
+  //   // محاكاة إجراء على مهمة
+  //   dispatch(showAlert(`تم ${action} المهمة "${taskName}"`, "success"));
+  // };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -174,7 +191,10 @@ const DashboardPage = () => {
         <div className="mt-8 bg-blue-50 p-6 rounded-xl text-center">
           <h3 className="text-xl font-semibold mb-2">ابدأ مشروعاً جديداً</h3>
           <p className="text-gray-600 mb-4">استفد من إمكانيات منصتنا لبدء مشروعك القادم</p>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+          <button 
+            onClick={handleCreateProject}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
             إنشاء مشروع جديد
           </button>
         </div>

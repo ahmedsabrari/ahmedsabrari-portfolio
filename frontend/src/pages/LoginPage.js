@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { login, clearError } from "../features/auth/authSlice";
+import { showAlert } from "../features/alert/alertSlice";
 import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
@@ -24,12 +25,33 @@ const LoginPage = () => {
     dispatch(clearError());
   }, [dispatch]);
 
+  useEffect(() => {
+    // عرض رسائل الخطأ كتنبيهات إذا كانت موجودة
+    if (error) {
+      dispatch(showAlert(error, "error"));
+    }
+  }, [error, dispatch]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // التحقق من صحة البيانات المدخلة
+    if (!formData.email || !formData.password) {
+      dispatch(showAlert("يرجى ملء جميع الحقول", "error"));
+      return;
+    }
+    
+    // التحقق من صحة البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      dispatch(showAlert("يرجى إدخال بريد إلكتروني صحيح", "error"));
+      return;
+    }
+    
     dispatch(login(formData));
   };
 
@@ -42,11 +64,6 @@ const LoginPage = () => {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <input
