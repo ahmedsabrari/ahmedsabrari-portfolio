@@ -12,9 +12,9 @@ const preloadedState = {
     token: token,
     loading: false,
     error: null,
-    isAuthenticated: !!token, // إضافة isAuthenticated بناءً على وجود token
+    isAuthenticated: !!token,
   },
-  alert:{
+  alert: {
     alerts: [],
   },
 };
@@ -28,9 +28,16 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // تجاهل التحقق من التسلسل للقيم غير القابلة للتسلسل
-        ignoredActions: ['auth/register/fulfilled', 'auth/login/fulfilled'],
-        ignoredPaths: ['payload.headers'],
+        ignoredActions: [
+          'auth/register/fulfilled', 
+          'auth/login/fulfilled',
+          'auth/logout/fulfilled'
+        ],
+        ignoredPaths: [
+          'payload.headers',
+          'payload.config',
+          'payload.request'
+        ],
       },
     }),
   devTools: process.env.NODE_ENV !== "production",

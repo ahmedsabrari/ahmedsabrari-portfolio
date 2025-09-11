@@ -48,7 +48,7 @@ api.interceptors.request.use(
       try {
         await getCsrfToken();
         
-        // إضافة XSRF-TOoken header يدوياً
+        // إضافة XSRF-Token header يدوياً
         const cookies = document.cookie.split(';');
         const xsrfToken = cookies.find(cookie => cookie.trim().startsWith('XSRF-TOKEN='));
         
@@ -62,7 +62,7 @@ api.interceptors.request.use(
       }
     }
 
-    const token = store.getState().auth.token || localStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -74,7 +74,7 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       // لا تقم بتعيين Content-Type لـ FormData - سيقوم axios بتعيينه تلقائياً مع الحدود الصحيحة
       delete config.headers['Content-Type'];
-    } else {
+    } else if (config.data) {
       config.headers['Content-Type'] = 'application/json';
     }
     
@@ -102,9 +102,22 @@ api.interceptors.response.use(
       } catch (csrfError) {
         return Promise.reject(csrfError);
       }
+    } else if (error.response?.status === 403) {
+      console.error("Forbidden:", error.response.data);
     }
+    
     return Promise.reject(error);
   }
 );
+
+// دوال API للمستخدمين
+export const userAPI = {
+  getProfile: () => api.get("/profile"),
+  updateProfile: (userData) => api.put("/profile", userData),
+  deleteAccount: () => api.delete("/account"),
+  getAllUsers: () => api.get("/users"),
+  blockUser: (userId) => api.post(`/users/${userId}/block`),
+  unblockUser: (userId) => api.post(`/users/${userId}/unblock`),
+};
 
 export default api;

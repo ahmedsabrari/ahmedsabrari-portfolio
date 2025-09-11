@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { register, clearError } from "../features/auth/authSlice";
-import { showAlert } from "../features/alert/alertSlice";
-import { useAuth } from "../hooks/useAuth";
+import { register, clearError } from "../../features/auth/authSlice";
+import { showAlert } from "../../features/alert/alertSlice";
+import { useAuth } from "../../hooks/useAuth";
 
 const RegisterPage = () => {
   const dispatch = useDispatch();

@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\UserController;
 
 // Routes without authentication
 Route::post('/register', [AuthController::class, 'register']);
@@ -25,9 +26,13 @@ Route::post('/contact', [ContactController::class, 'store']);
 // Routes with authentication
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', [AuthController::class, 'profile']);
+    
+    // User profile routes (for authenticated users)
+    Route::get('/profile', [UserController::class, 'profile']);
+    Route::put('/profile', [UserController::class, 'updateProfile']);
+    Route::delete('/account', [UserController::class, 'deleteAccount']);
 
-    // Admin only routes - Using Policies for authorization instead of role middleware
+    // Admin only routes - Using Policies for authorization
     Route::middleware(['can:admin'])->group(function () {
         // Projects admin routes
         Route::post('/projects', [ProjectController::class, 'store']);
@@ -45,5 +50,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/contacts/{id}', [ContactController::class, 'show']);
         Route::put('/contacts/{id}/read', [ContactController::class, 'markAsRead']);
         Route::delete('/contacts/{id}', [ContactController::class, 'destroy']);
+
+        // User management routes for admin
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users/{user}/block', [UserController::class, 'blockUser']);
+        Route::post('/users/{user}/unblock', [UserController::class, 'unblockUser']);
     });
 });

@@ -1,20 +1,21 @@
+// src/components/Navbar.js
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useDispatch } from "react-redux";
-import { logout } from "../features/auth/authSlice";
+import { logoutUser } from "../features/auth/authSlice";
 
 const Navbar = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const dispatch = useDispatch();
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
   };
 
   return (
     <nav className="bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
       <div className="font-bold text-lg">
-        <Link to="/">{process.env.REACT_APP_APP_NAME}</Link>
+        <Link to="/">{process.env.REACT_APP_APP_NAME || "Portfolio"}</Link>
       </div>
 
       <div className="space-x-4">
@@ -33,14 +34,28 @@ const Navbar = () => {
         ) : (
           <>
             <span>مرحباً، {user?.name}</span>
-            <Link to="/dashboard" className="hover:text-gray-300">
-              لوحة التحكم
-            </Link>
+            {user?.role === 'admin' ? (
+              <>
+                <Link to="/admin" className="hover:text-gray-300">
+                  لوحة التحكم
+                </Link>
+                <Link to="/admin/profile" className="hover:text-gray-300">
+                  الملف الشخصي
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/profile" className="hover:text-gray-300">
+                  الملف الشخصي
+                </Link>
+              </>
+            )}
             <button
               onClick={handleLogout}
-              className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+              disabled={loading}
+              className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 disabled:opacity-50"
             >
-              تسجيل الخروج
+              {loading ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
             </button>
           </>
         )}

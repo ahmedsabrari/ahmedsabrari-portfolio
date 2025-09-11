@@ -102,25 +102,4 @@ public function logout(Request $request): JsonResponse
         ], 500);
     }
 }
-
-   // Get Profile API
-public function profile(Request $request): JsonResponse
-{
-    try{
-        if(!$request->user()){
-            return response()->json([
-                'message' => 'Not authenticated'
-            ], 401);
-        }
-        return response()->json([
-            'user' => new UserResource($request->user())
-        ], 200);
-    } catch(\Exception $e){
-        Log::error('Profile retrieval error', ['error' => $e->getMessage()]);
-        return response()->json([
-            'message' => 'Failed to retrieve profile',
-            'error' => config('app.debug') ? $e->getMessage() : 'Internal Server Error'
-        ], 500);
-    }
-}
 }

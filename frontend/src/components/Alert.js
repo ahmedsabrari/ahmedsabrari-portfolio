@@ -16,12 +16,17 @@ const Alert = () => {
 
   useEffect(() => {
     // إضافة تنبيهات جديدة إلى الحالة المحلية
+    const newAlerts = {};
     alerts.forEach(alert => {
       if (!visibleAlerts[alert.id]) {
-        setVisibleAlerts(prev => ({ ...prev, [alert.id]: true }));
+        newAlerts[alert.id] = true;
       }
     });
-  }, [alerts, visibleAlerts]);
+    
+    if (Object.keys(newAlerts).length > 0) {
+      setVisibleAlerts(prev => ({ ...prev, ...newAlerts }));
+    }
+  }, [alerts]); // إزالة visibleAlerts من dependencies لتجنب التكرار
 
   const handleClose = (id) => {
     // إخفاء التنبيه ثم إزالته بعد انتهاء الرسوم المتحركة
@@ -39,32 +44,34 @@ const Alert = () => {
   if (!alerts.length) return null;
 
   const getAlertConfig = (type) => {
-    switch (type) {
-      case 'success':
-        return {
-          bg: 'bg-green-50 border-green-400',
-          text: 'text-green-800',
-          icon: <CheckCircleIcon className="h-5 w-5 text-green-400" />,
-        };
-      case 'error':
-        return {
-          bg: 'bg-red-50 border-red-400',
-          text: 'text-red-800',
-          icon: <ExclamationCircleIcon className="h-5 w-5 text-red-400" />,
-        };
-      case 'warning':
-        return {
-          bg: 'bg-yellow-50 border-yellow-400',
-          text: 'text-yellow-800',
-          icon: <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />,
-        };
-      default:
-        return {
-          bg: 'bg-blue-50 border-blue-400',
-          text: 'text-blue-800',
-          icon: <InformationCircleIcon className="h-5 w-5 text-blue-400" />,
-        };
-    }
+    const configs = {
+      success: {
+        bg: 'bg-green-50 border-green-400',
+        text: 'text-green-800',
+        icon: <CheckCircleIcon className="h-5 w-5 text-green-400" />,
+        focusRing: 'focus:ring-green-600 focus:ring-offset-green-50'
+      },
+      error: {
+        bg: 'bg-red-50 border-red-400',
+        text: 'text-red-800',
+        icon: <ExclamationCircleIcon className="h-5 w-5 text-red-400" />,
+        focusRing: 'focus:ring-red-600 focus:ring-offset-red-50'
+      },
+      warning: {
+        bg: 'bg-yellow-50 border-yellow-400',
+        text: 'text-yellow-800',
+        icon: <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />,
+        focusRing: 'focus:ring-yellow-600 focus:ring-offset-yellow-50'
+      },
+      info: {
+        bg: 'bg-blue-50 border-blue-400',
+        text: 'text-blue-800',
+        icon: <InformationCircleIcon className="h-5 w-5 text-blue-400" />,
+        focusRing: 'focus:ring-blue-600 focus:ring-offset-blue-50'
+      }
+    };
+    
+    return configs[type] || configs.info;
   };
 
   return (
@@ -92,7 +99,7 @@ const Alert = () => {
                 <div className="-mx-1.5 -my-1.5">
                   <button
                     type="button"
-                    className={`inline-flex rounded-md p-1.5 ${config.bg} hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-${alert.type}-50 focus:ring-${alert.type}-600`}
+                    className={`inline-flex rounded-md p-1.5 ${config.bg} hover:opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.focusRing}`}
                     onClick={() => handleClose(alert.id)}
                   >
                     <span className="sr-only">إغلاق</span>

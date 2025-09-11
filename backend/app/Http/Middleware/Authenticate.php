@@ -13,8 +13,14 @@ class Authenticate extends Middleware
      */
     public function handle($request, Closure $next, ...$guards)
     {
-        if ($this->authenticate($request, $guards) === 'authentication_failed') {
+        $authResult = $this->authenticate($request, $guards);
+
+        if ($authResult === 'authentication_failed') {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if ($authResult === 'account_blocked') {
+            return response()->json(['error' => 'Your account has been blocked'], 403);
         }
 
         return $next($request);
@@ -31,6 +37,13 @@ class Authenticate extends Middleware
 
         foreach ($guards as $guard) {
             if ($this->auth->guard($guard)->check()) {
+                $user = $this->auth->guard($guard)->user();
+                
+                // التحقق من حالة المستخدم
+                if ($user->status === 'blocked') {
+                    return 'account_blocked';
+                }
+
                 return $this->auth->shouldUse($guard);
             }
         }
