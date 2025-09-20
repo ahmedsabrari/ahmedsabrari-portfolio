@@ -15,19 +15,45 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'register', 'logout', 'user'],
+    'paths' => [
+        'api/*', 
+        'sanctum/csrf-cookie', 
+        'login', 
+        'register', 
+        'logout',
+        'profile',
+        'user/*',
+        'users/*'
+    ],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'OPTIONS'
+    ],
 
-    'allowed_origins' => ['http://localhost:3000'],
+    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000')),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'X-XSRF-TOKEN',
+        'Accept',
+        'X-CSRF-TOKEN'
+    ],
 
-    'exposed_headers' => [],
+    'exposed_headers' => [
+        'Authorization',
+        'X-CSRF-TOKEN'
+    ],
 
-    'max_age' => 0,
+    'max_age' => env('CORS_MAX_AGE', 86400),
 
     'supports_credentials' => true,
 
